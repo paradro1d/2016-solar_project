@@ -1,13 +1,14 @@
 # coding: utf-8
 # license: GPLv3
 
+from pygame.draw import *
+import pygame
+
 """Модуль визуализации.
 Нигде, кроме этого модуля, не используются экранные координаты объектов.
-Функции, создающие гaрафические объекты и перемещающие их на экране, принимают физические координаты
+Функции, создающие гaрафические объекты и перемещающие их на экране,
+принимают физические координаты
 """
-
-header_font = "Arial-16"
-"""Шрифт в заголовке"""
 
 window_width = 800
 """Ширина окна"""
@@ -21,10 +22,93 @@ scale_factor = None
 Мера: количество пикселей на один метр."""
 
 
+def init():
+    '''
+    Инициализирует модуль pygame и создает главную поверхность screen.
+    также создает шрифт myfont для рисования текста.
+    '''
+    global screen
+    global myfont
+    pygame.init()
+    screen = pygame.display.set_mode((window_width, window_height))
+    myfont = pygame.font.SysFont('Arial', 40)
+
+
+def get_screen():
+    '''
+    Возвращает главную поверхность. Предназначен для использования
+    в других модулях.
+    '''
+    global screen
+    return screen
+
+
+def fill():
+    '''
+    Заливает белым фон экрана
+    '''
+    global screen
+    screen.fill((255, 255, 255))
+
+
+def quit_():
+    '''
+    Выход из модуля pygame
+    '''
+    pygame.quit()
+
+
+class button:
+    '''
+    Кнопка на поверности surface цвета color, являющаяся
+    прямоугольником rect c текстом text.
+    '''
+
+    def __init__(self, color, rectan, text):
+        '''
+        Объявление объекта класса кнопки. Surface - поверхность,
+        на которой она отображается. color - её цвет. rectan -
+        прямоугольник, в который она вписана.
+        text - текст на кнопке.
+        '''
+        global screen
+        self.surface = screen
+        self.color = color
+        self.rect = rectan
+        self.text = text
+
+    def check(self):
+        '''
+        Проверяет положение курсора по отношению к кнопке.
+        Если она внутри, то возвращает True. Иначе - False.
+        '''
+        x, y = pygame.mouse.get_pos()
+        x0, y0, dx, dy = self.rect
+        return ((x > x0) and (x < x0 + dx) and (y > y0) and (y < y0 + dy))
+
+    def draw(self):
+        '''
+        Функция отрисовывает кнопку
+        '''
+        global myfont
+        rect(self.surface, self.color, self.rect)
+        if self.check():
+            rect(self.surface, (65, 74, 76), self.rect)
+        textsurface = myfont.render(self.text, False, (0, 0, 0))
+        surf = pygame.Surface(textsurface.get_size(), pygame.SRCALPHA)
+        surfscaled = pygame.Surface(
+            (self.rect[2], self.rect[3]), pygame.SRCALPHA)
+        surf.blit(textsurface, (0, 0))
+        pygame.transform.smoothscale(
+            surf, (self.rect[2], self.rect[3]), surfscaled)
+        self.surface.blit(surfscaled, (self.rect[0], self.rect[1]))
+
+
 def calculate_scale_factor(max_distance):
-    """Вычисляет значение глобальной переменной **scale_factor** по данной характерной длине"""
+    """Вычисляет значение глобальной переменной **scale_factor**
+    по данной характерной длине"""
     global scale_factor
-    scale_factor = 0.4*min(window_height, window_width)/max_distance
+    scale_factor = 0.4 * min(window_height, window_width)/max_distance
     print('Scale factor:', scale_factor)
 
 
@@ -54,62 +138,48 @@ def scale_y(y):
     **y** — y-координата модели.
     """
 
-    return y  # FIXME: not done yet
+    return int(y*scale_factor) + window_height//2
 
 
-def create_star_image(space, star):
-    """Создаёт отображаемый объект звезды.
-
-    Параметры:
-
-    **space** — холст для рисования.
-    **star** — объект звезды.
-    """
-
-    x = scale_x(star.x)
-    y = scale_y(star.y)
-    r = star.R
-    star.image = space.create_oval([x - r, y - r], [x + r, y + r], fill=star.color)
-
-
-def create_planet_image(space, planet):
-    """Создаёт отображаемый объект планеты.
-
-    Параметры:
-
-    **space** — холст для рисования.
-    **planet** — объект планеты.
-    """
-    pass  # FIXME: сделать как у звезды
+def write_text(text, coords):
+    """Создает на экране текст.
+    **space** - поверхность текста.
+    **text** - строка текста.
+    **coords** - коодрдинаты текста"""
+    global myfont
+    global screen
+    textsurface = myfont.render(text, False, (0, 0, 0))
+    x, y = textsurface.get_size()
+    surf = pygame.Surface(textsurface.get_size(), pygame.SRCALPHA)
+    surfscaled = pygame.Surface(
+            (x // 2, y // 2), pygame.SRCALPHA)
+    surf.blit(textsurface, (0, 0))
+    pygame.transform.smoothscale(
+            surf, (x // 2, y // 2), surfscaled)
+    screen.blit(surfscaled, coords)
 
 
-def update_system_name(space, system_name):
-    """Создаёт на холсте текст с названием системы небесных тел.
-    Если текст уже был, обновляет его содержание.
+def key_check(string, text, alphabet):
+    '''
+    Обработка нажатия клавиши при вводе текста.
+    Возвращает текст после нажатия клавиши.
+    **text** - строка набираемого текста.
+    **string** - текст вводимой клавиши.
+    **aplhabet** - алфавит (допустимые для ввода символы).
+    '''
+    if string in alphabet:
+        text = text + string
+    elif string == 'backspace':
+        text = text[0:len(text)-1]
+    return text
 
-    Параметры:
 
-    **space** — холст для рисования.
-    **system_name** — название системы тел.
-    """
-    space.create_text(30, 80, tag="header", text=system_name, font=header_font)
-
-
-def update_object_position(space, body):
-    """Перемещает отображаемый объект на холсте.
-
-    Параметры:
-
-    **space** — холст для рисования.
-    **body** — тело, которое нужно переместить.
-    """
-    x = scale_x(body.x)
-    y = scale_y(body.y)
-    r = body.R
-    if x + r < 0 or x - r > window_width or y + r < 0 or y - r > window_height:
-        space.coords(body.image, window_width + r, window_height + r,
-                     window_width + 2*r, window_height + 2*r)  # положить за пределы окна
-    space.coords(body.image, x - r, y - r, x + r, y + r)
+def draw_objects(space_objects):
+    '''
+    Прорисовка массива space_objects объектов класса body.
+    '''
+    for body in space_objects:
+        body.draw_object(screen)
 
 
 if __name__ == "__main__":
