@@ -48,7 +48,7 @@ def fill():
     Заливает белым фон экрана
     '''
     global screen
-    screen.fill((255, 255, 255))
+    screen.fill((0, 0, 0))
 
 
 def quit_():
@@ -148,7 +148,7 @@ def write_text(text, coords):
     **coords** - коодрдинаты текста"""
     global myfont
     global screen
-    textsurface = myfont.render(text, False, (0, 0, 0))
+    textsurface = myfont.render(text, False, (255, 255, 255))
     x, y = textsurface.get_size()
     surf = pygame.Surface(textsurface.get_size(), pygame.SRCALPHA)
     surfscaled = pygame.Surface(
@@ -179,7 +179,7 @@ def draw_objects(space_objects):
     Прорисовка массива space_objects объектов класса body.
     '''
     for body in space_objects:
-        body.draw_object(screen)
+        body.draw_object()
 
 
 if __name__ == "__main__":
